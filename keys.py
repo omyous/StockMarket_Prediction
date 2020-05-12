@@ -1,0 +1,2 @@
+Pkey = 'pxrpPuXt6IVqfWtwm6XrqWrYmehDwZcPEIB64AMKjNnfSBWzropQFa3djZop6tB2'
+Skey = 'x7Ni12Dq5SUM3EPpGdBbam4UpHfSQu7IC0QFi97RCHpd4Bkj0gw1OtHDxUzQkTNM'
