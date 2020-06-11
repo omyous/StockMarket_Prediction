@@ -2,12 +2,14 @@
 from pathlib import Path
 import datetime as dt
 import pandas_datareader as web
+import pandas as pd
 
 
 class Stock_data():
     def __init__(self):
+        self.ticker = "GOOGL"
         #check if the file that contains the last scrapping data exists
-        self.start_path = Path("data/start_file.txt")
+        self.start_path = Path("data/stock_start_file.txt")
 
         if self.start_path.is_file():
             self.file = open(self.start_path, 'r+')
@@ -26,16 +28,37 @@ class Stock_data():
         #self._raw_data = self.get_data()
         #self.update_start()
 
+
     #save the default date in the file
     def save_default_date(self):
         self.start = dt.date(2019, 1, 1)
         self.file = open(self.start_path, 'w+', encoding="utf-8")
-        self.file.write(self.start)
+        self.file.write(str(self.start))
         self.file.close()
 
     #get the data from self.satrt to self.end
-    def get_data(self, ticker ="AAPL"):
-        return web.data.DataReader(ticker, 'yahoo',self.start, self.end)
+    def get_data(self):
+        return web.data.DataReader(self.ticker, 'yahoo',self.start, self.end)
+
+    def update_stock_hist(self):
+        df = pd.read_csv("data/google.csv")[["Date","High","Low","Open","Close","Volume","Adj Close"]]
+        df= df.set_index("Date")
+        print(df.columns)
+        print(df.index.values)
+        start = open(self.start_path, "r+").read()
+        start = dt.date(int(start[:4]), int(start[5:7]), int(start[8:10]))
+        self.raw_data = web.data.DataReader(self.ticker, 'yahoo', start, dt.date.today())
+        self.raw_data["Date"] = pd.to_datetime(self.raw_data.index.values, format='%Y/%m/%d')
+        self.raw_data = self.raw_data.set_index("Date")
+        print(self.raw_data.columns)
+        print(self.raw_data.index.values)
+        #print(self.raw_data)
+        df= df.append(self.raw_data, ignore_index=False)
+        print(df)
+
+        df.to_csv("data/google.csv")
+        self.update_start()
+
 
 
     #after the scrapping, we have to update the start date to get the test data afterwhile
@@ -53,10 +76,32 @@ class Stock_data():
     def raw_data(self, value):
         self._raw_data = value
 
+# ----------------------------- Class to load the scrapped storck prices and preprocess them ----------------------------------#
+class Custom_dataset():
+    def __init__(self, path):
 
+        # get the data
+        try:
+            self.raw_data = pd.read_csv(path)
+        except ValueError:
+            raise ValueError(path + " does not exist")
+
+        self.raw_data["Date"] = pd.to_datetime(self.raw_data['Date'], format='%Y/%m/%d')
+        self.raw_data = self.raw_data.set_index("Date")
+
+    """def clean_data(self):
+        #check for nan values
+        #check for zero columns
+        #check for zeros rows
+        #check for incompatible types
+        #drop duplicates"""
+
+
+
+# ----------------------------------------------------------------------MAIN -------------------------------------------------------#
 if __name__ == '__main__':
     s = Stock_data()
-    s.update_start()
+    s.update_stock_hist()
 
 
 
@@ -75,6 +120,18 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
+
+
+
+
+
+    """p = Plots()
+    p.plot_prices(y=df.raw_data["Close"], x=df.raw_data.index, title= "Google stock prices")"""
 
 
 """import yfinance
@@ -105,8 +162,19 @@ if __name__ == '__main__':
 
 
    print(get_yahoo_ticker_data(ticker='GOOGL'))    
+
     
     """
+"""date = pd.to_datetime(df.raw_data['Date'], format='%Y/%m/%d')
+ df.raw_data["Date"] = pd.to_datetime(df.raw_data['Date'], format='%Y/%m/%d')
+ df.raw_data=df.raw_data.set_index("Date")
+ print(list(df.raw_data.index))
+ import plotly.graph_objects as go
+
+ fig = go.Figure()
+ fig.add_trace(go.Scatter(y=df.raw_data["Close"],x=df.raw_data.index, mode="lines"))
+ fig.update_xaxes(tickangle=45)
+ fig.show()"""
 
 
 
