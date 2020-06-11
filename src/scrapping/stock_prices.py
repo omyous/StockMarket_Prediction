@@ -43,18 +43,15 @@ class Stock_data():
     def update_stock_hist(self):
         df = pd.read_csv("data/google.csv")[["Date","High","Low","Open","Close","Volume","Adj Close"]]
         df= df.set_index("Date")
-        print(df.columns)
-        print(df.index.values)
         start = open(self.start_path, "r+").read()
         start = dt.date(int(start[:4]), int(start[5:7]), int(start[8:10]))
         self.raw_data = web.data.DataReader(self.ticker, 'yahoo', start, dt.date.today())
         self.raw_data["Date"] = pd.to_datetime(self.raw_data.index.values, format='%Y/%m/%d')
         self.raw_data = self.raw_data.set_index("Date")
-        print(self.raw_data.columns)
-        print(self.raw_data.index.values)
+
         #print(self.raw_data)
         df= df.append(self.raw_data, ignore_index=False)
-        print(df)
+        #print(df)
 
         df.to_csv("data/google.csv")
         self.update_start()
@@ -76,29 +73,7 @@ class Stock_data():
     def raw_data(self, value):
         self._raw_data = value
 
-# ----------------------------- Class to load the scrapped storck prices and preprocess them ----------------------------------#
-class Custom_dataset():
-    def __init__(self, path):
 
-        # get the data
-        try:
-            self.raw_data = pd.read_csv(path)
-        except ValueError:
-            raise ValueError(path + " does not exist")
-
-        self.raw_data["Date"] = pd.to_datetime(self.raw_data['Date'], format='%Y/%m/%d')
-        self.raw_data = self.raw_data.set_index("Date")
-
-    """def clean_data(self):
-        #check for nan values
-        #check for zero columns
-        #check for zeros rows
-        #check for incompatible types
-        #drop duplicates"""
-
-
-
-# ----------------------------------------------------------------------MAIN -------------------------------------------------------#
 if __name__ == '__main__':
     s = Stock_data()
     s.update_stock_hist()
