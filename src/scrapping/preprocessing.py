@@ -19,11 +19,8 @@ class Custom_dataset():
 
     def clean_data(self):
         self.get_data()
-        #print(self.prices.shape)
-        #print(self.prices[self.prices.duplicated()])
-        #group tweets of the same day since our stock prices ar daily
-        #self.clean_tweets()
-        self.clean_prices()
+        self.clean_tweets()
+        #self.clean_prices()
 
 
 
@@ -31,9 +28,14 @@ class Custom_dataset():
 
         self.tweets["date"] = pd.to_datetime(self.tweets["date"], format='%Y/%m/%d')
         self.tweets["date"] = self.tweets["date"].dt.date
+        #drop any duplicate post
+        self.tweets = self.tweets.drop_duplicates()
         self.tweets['expand'] = self.tweets.apply(lambda x: ', '.join([x['text']]), axis=1)
         self.tweets = self.tweets.groupby('date')['expand'].apply(list)
         self.tweets = pd.DataFrame(data=self.tweets.values, index=self.tweets.index, columns=["text"])
+        #create one daily tweet  intead of many ones
+        text = [' '.join(sentence) for sentence in self.tweets["text"]]
+        self.tweets["text"] = text
         self.tweets.to_csv("data/clean_tweets.csv")
 
     def clean_prices(self):
@@ -41,7 +43,6 @@ class Custom_dataset():
         self.prices = self.prices.drop_duplicates()
         #delete zeros columns
         self.prices = self.prices.loc[:, (self.prices != 0).any(axis=0)]
-
         self.prices["Date"] = pd.to_datetime(self.prices["Date"], format='%Y/%m/%d')
         self.prices["Date"] = self.prices["Date"].dt.date
 
@@ -49,7 +50,6 @@ class Custom_dataset():
 if __name__ == "__main__":
     df = Custom_dataset()
     df.clean_data()
-    print(df.prices)
 
     """"  t = df.tweets
     t["date"] = pd.to_datetime(t["date"], format='%Y/%m/%d')
