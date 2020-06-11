@@ -52,7 +52,7 @@ class Tweets():
                     tweets=got.manager.TweetManager.getTweets(tweetCriteria)
                     for tt in tweets:
                         df = df.append({'date': tt.date, 'text': tt.text}, ignore_index=True)
-                        print(tt.text)
+                        #print(tt.text)
 
         df.to_csv("data/google_tweets_.csv", index=False)
 
@@ -100,7 +100,7 @@ class Tweets():
                 tweets = got.manager.TweetManager.getTweets(tweetCriteria)
                 for tt in tweets:
                     df = df.append({'date': tt.date, 'text': tt.text}, ignore_index=True)
-                    print(tt.text)
+                    #print(tt.text)
 
         df.to_csv("data/google_tweets_.csv", index=False)
         self.file.close()
