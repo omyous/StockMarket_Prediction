@@ -2,9 +2,10 @@ import GetOldTweets3 as got
 from pathlib import Path
 import datetime as dt
 import pandas as pd
+#2020-06-24 09:11:16.750306
 
 class Tweets():
-    def __init__(self, company: str = "#Goole"):
+    def __init__(self, company: str = "Google business tech"):
         self.company = company
         #check if the file that contains the last scrapping data exists
         self.start_path = Path("data/tweet_start_file.txt")
@@ -32,7 +33,7 @@ class Tweets():
 
     def get_tweets(self):
         years: list = ["2019","2020"]
-        months: list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+        months: list = ["01","02","03","04","05","06","07","08","09","10","11","12"]
         days: list = ["01","02","03","04","05", "06", "07", "08", "09", "10",
                       "11", "12", "13", "14","15", "16", "17", "18","19",
                       "20", "21","22","23", "24", "25", "26", "27", "28", "29",
@@ -52,9 +53,10 @@ class Tweets():
                     tweets=got.manager.TweetManager.getTweets(tweetCriteria)
                     for tt in tweets:
                         df = df.append({'date': tt.date, 'text': tt.text}, ignore_index=True)
-                        #print(tt.text)
+                        print(tt.text)
 
         df.to_csv("data/google_tweets_.csv", index=False)
+        self.update_start()
 
     #after the scrapping, we have to update the start date to get the test data afterwhile
     def update_start(self):
@@ -80,7 +82,6 @@ class Tweets():
 
         if dt.date.today().month != start.month:
             months.append(str(dt.date.today().month))
-
             days:list =["01","02","03","04","05", "06", "07", "08", "09", "10",
                       "11", "12", "13", "14","15", "16", "17", "18","19",
                       "20", "21","22","23", "24", "25", "26", "27", "28", "29",
@@ -92,8 +93,8 @@ class Tweets():
         for m in months:
             for d in days:
                 tweetCriteria = got.manager.TweetCriteria().setQuerySearch(self.company) \
-                    .setSince("2020" + "-" + m + "-" + d) \
-                    .setUntil("2020" + "-" + m + "-" + str(int(d) + 1)) \
+                    .setSince("2019" + "-" + m + "-" + d) \
+                    .setUntil("2019" + "-" + m + "-" + str(int(d) + 1)) \
                     .setTopTweets(False) \
                     .setMaxTweets(150) \
                     .setLang('en')
@@ -107,7 +108,9 @@ class Tweets():
         self.update_start()
 
 
+
 if __name__ == '__main__':
 
     t = Tweets()
-    t.update_tweet_hist()
+    #t.get_tweets()
+    #t.update_tweet_hist()

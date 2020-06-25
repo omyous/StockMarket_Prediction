@@ -1,11 +1,14 @@
-
 import numpy as np
 from flask import Flask, request, jsonify, render_template
 import pickle
 
 app = Flask(__name__)
-model = pickle.load(open('../machine_learning/model.pkl', 'rb'))
 
+model = pickle.load(open('../machine_learning/model.pkl', 'rb'))
+@app.after_request
+def add_header(response):
+    response.cache_control.max_age = 0
+    return response
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -20,9 +23,6 @@ def actualites():
 
 @app.route('/predict',methods=['POST'])
 def predict():
-    '''
-    For rendering results on HTML GUI
-    '''
     int_features = [int(x) for x in request.form.values()]
     final_features = [np.array(int_features)]
     prediction = model.predict(final_features)
@@ -43,4 +43,5 @@ def predict_api():
     return jsonify(output)
 
 if __name__ == "__main__":
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.run(debug=True)

@@ -5,29 +5,19 @@
   <meta charset="UTF-8"/>
   <title>Stcok market api</title>
     <meta charset="UTF-8">
-  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Hind:300' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type='text/css' href="{{ url_for('static', filename='css_test/style.css') }}"/>
+    <link rel="stylesheet" type='text/css' href="{{url_for('static', filename='css/style.css')}}"/>
 
 </head>
 
-<body class="body">
+<body>
+<div class="index">
+    	<br><br><h1>Welcome to Stock-forecaster</h1><br>
+<ul id="navigation">
+  <li><a href="actualities.html" title="Check the company stock prices">Actualities</a></li>
+  <li><a href="predictions.html" title="check for probable prices in the next few hours">Predictions</a></li>
+</ul>
 
-	<h1>Welcome to Stock-forecaster</h1>
-
-    <div id="menu" >
-        <ul id="onglets" >
-        <li ><a href="actualities.html" ><b>Stock market actualies</b>  </a></li>
-        <li><a href="predictions.html"><b>Predictions</b>  </a></li>
-      </ul>
-
-        </div>
-        <!--<button type="submit" class="btn btn-primary btn-block btn-large">Predict</button>-->
-    </form>
-   <br>
-   <br>
+</div>
 
 </body>
 </html>
