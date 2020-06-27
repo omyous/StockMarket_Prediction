@@ -1,23 +1,26 @@
-from stocknews import StockNews
-from src.scrapping.data.keys import *
-import regex as re
-import pandas as pd
+from src.scrapping.tweets import *
+from src.scrapping.preprocessing import *
+from src.scrapping.stock_prices import *
+
+
+def update_historical_data():
+ # get the lastest tweets
+ t = Tweets()
+ t.update_tweet_hist()
+ # get the latest stock prices
+ s = Stock_data()
+ s.update_stock_hist()
+
+
+def clean_and_merge():
+ #update_historical_data()
+ #clean and merged the datasets
+ df = Custom_dataset()
+ df.clean_data()
+ senti = Sentimend_analysis()
+ senti.tweets_analytics()
+ df.merge_data()
+
 if __name__=="__main__":
-   def reduce_lengthening(text):
-      pattern = re.compile(r"(.)\1{2,}")
-      return pattern.sub(r"\1\1", text)
-
-   from spellchecker import SpellChecker
-
-   def specll_check(words):
-         spell = SpellChecker()
-         words = spell.split_words(words)
-
-         return " ".join([spell.correction(word) for word in words])
-
-
-   str="Disssruption bettween employee DDDoncaste"
-   str = reduce_lengthening(str)
-   str = specll_check(str)
-   print(str)
+ clean_and_merge()
 

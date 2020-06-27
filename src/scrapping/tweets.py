@@ -32,8 +32,8 @@ class Tweets():
         .setLang('en')
 
     def get_tweets(self):
-        years: list = ["2019","2020"]
-        months: list = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+        years: list = ["2020"]
+        months: list = ["01","02","03","04"]#"01","02","03","04","05","06","07","08","09","10","11","12"
         days: list = ["01","02","03","04","05", "06", "07", "08", "09", "10",
                       "11", "12", "13", "14","15", "16", "17", "18","19",
                       "20", "21","22","23", "24", "25", "26", "27", "28", "29",
@@ -56,7 +56,7 @@ class Tweets():
                         print(tt.text)
 
         df.to_csv("data/google_tweets_.csv", index=False)
-        self.update_start()
+
 
     #after the scrapping, we have to update the start date to get the test data afterwhile
     def update_start(self):
@@ -93,8 +93,8 @@ class Tweets():
         for m in months:
             for d in days:
                 tweetCriteria = got.manager.TweetCriteria().setQuerySearch(self.company) \
-                    .setSince("2019" + "-" + m + "-" + d) \
-                    .setUntil("2019" + "-" + m + "-" + str(int(d) + 1)) \
+                    .setSince("2020" + "-" + m + "-" + d) \
+                    .setUntil("2020" + "-" + m + "-" + str(int(d) + 1)) \
                     .setTopTweets(False) \
                     .setMaxTweets(150) \
                     .setLang('en')
@@ -113,4 +113,4 @@ if __name__ == '__main__':
 
     t = Tweets()
     #t.get_tweets()
-    #t.update_tweet_hist()
+    t.update_tweet_hist()
