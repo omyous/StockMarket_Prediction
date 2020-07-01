@@ -48,7 +48,7 @@ class Stock_data():
         self.raw_data = web.data.DataReader(self.ticker, 'yahoo', start, dt.date.today())
         self.raw_data["Date"] = pd.to_datetime(self.raw_data.index.values, format='%Y/%m/%d')
         self.raw_data = self.raw_data.set_index("Date")
-
+        print("self.rawdata:",self.raw_data)
         #print(self.raw_data)
         df= df.append(self.raw_data, ignore_index=False)
         #print(df)

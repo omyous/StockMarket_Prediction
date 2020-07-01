@@ -5,15 +5,16 @@ from src.scrapping.stock_prices import *
 
 def update_historical_data():
  # get the lastest tweets
- t = Tweets()
- t.update_tweet_hist()
+ #t = Tweets()
+ #t.update_tweet_hist()
  # get the latest stock prices
  s = Stock_data()
  s.update_stock_hist()
+ print("update done")
 
 
-def clean_and_merge():
- #update_historical_data()
+def update_clean_merge():
+ update_historical_data()
  #clean and merged the datasets
  df = Custom_dataset()
  df.clean_data()
@@ -21,6 +22,7 @@ def clean_and_merge():
  senti.tweets_analytics()
  df.merge_data()
 
+
 if __name__=="__main__":
- clean_and_merge()
+ update_clean_merge()
 
