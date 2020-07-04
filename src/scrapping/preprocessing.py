@@ -130,23 +130,7 @@ class Custom_dataset():
                                         'negative':tweets['negative'].median()
                                         },
                                        ignore_index=True)
-        """
-        print("####################################\n\n")
-
-        for i in tweets_dates:
-            if not i in prices_dates:
-                print("insérer ",i, " dans prices")
-                prices = prices.append({'Date': i,
-                                        'High': prices["High"].median(),
-                                        'Low':prices['Low'].median(),
-                                        'Open':prices['Open'].median(),
-                                        'Close':prices['Close'].median(),
-                                        'Volume':prices['Volume'].median(),
-                                        'Adj Close':prices['Adj Close'].median()
-                                        },
-                                       ignore_index=True
-                                       )"""
-
+        
 
         tweets=tweets.sort_values("date", ascending=True)
         tweets.to_csv("data/tweets_scores_.csv", index=False)
@@ -155,24 +139,49 @@ class Custom_dataset():
         df = prices.merge(df, on="Date")
         df.to_csv("data/merged.csv", index=False)
 
-#-----------------------------------------------------------------------------------------------------#
+##################################################Preapre the suitable data format for the lstm model ###################################################
 
 class LSTM_data():
     def __init__(self):
         self.raw_data= pd.read_csv("data/merged.csv",
                                     index_col=0
-                                    )[["Close","High","Low","Open","Volume","positive","negative"]]
+                                    )
 
         self.lag:int = 5
         self.x_scaler = MinMaxScaler()
         self.y_scaler = MinMaxScaler()
 
 
-    def X(self):
-        return self.raw_data[["High","Low","Open","Volume","positive","negative"]].values
+    def get_XY(self):
+        data = self.raw_data
+        Y = data[["Close"]]
+        Y.columns = ["Y"]
+        # shift the features
 
-    def y(self):
-        return self.raw_data[["Close"]].values
+        cols = ["High", "Low", "Open", "Volume", "Adj Close", "positive", "negative"]
+        dres = data
+        lag_value = 5
+
+        # shift to get all the data from X
+        for i in range(1, lag_value + 1):
+            dtemp = data[cols].shift(periods=i)
+            dtemp.columns = [c + '_lag' + str(i) for c in cols]
+            dres = dres.merge(dtemp, on='Date')
+        X = dres
+
+        # shift the dependant variable
+        cols = Y.columns
+        dy = pd.DataFrame(index=Y.index)
+        for i in range(1, lag_value + 1):
+            dytemps = Y.shift(periods=i)
+            dytemps.columns = [c + '_lag' + str(i) for c in cols]
+            dy = dy.merge(dytemps, on='Date')
+        X = X.merge(dy, on='Date')
+        X = X.dropna()
+
+        Y = X[["Close"]].values
+        X = X.drop(["Close"], axis=1).values
+        return X,Y
     def add_noise(self):
         mu, sigma = 0, 0.1
         # creating a noise with the same dimension as the dataset (2,2)
@@ -193,92 +202,55 @@ class LSTM_data():
 
         return np.array(xs), np.array(ys)
 
-    def normalize_x(self, values):
-        # normalize features
-        return self.x_scaler.fit_transform(values)
+    def get_splited_data(self):
+        X, Y = self.get_XY()
 
-    def normalize_y(self, values):
-        # normalize features
-        return self.y_scaler.fit_transform(values)
+        # split the data to test and train sets
+        X_train, X_test = X[:int(X.shape[0] * .8), :], X[int(X.shape[0] * .8):, :]
+        y_train, y_test = Y[:int(X.shape[0] * .8), :], Y[int(X.shape[0] * .8):, :]
+
+        # normalize the explicative variables
+        X_train_scaled = self.x_scaler.fit_transform(X_train)
+        X_test_scaled = self.x_scaler.transform(X_test)
+
+        # normalize the dependant variable
+        Y_train_scaled = self.y_scaler.fit_transform(y_train)
+        Y_test_scaled = self.y_scaler.transform(y_test)
+        return X_train_scaled, X_test_scaled, Y_train_scaled, Y_test_scaled
 
     def get_memory(self):
-        # add gaussian noise to tweets scores
-        self.add_noise()
-        #get data
-        X, y = self.X(), self.y()
+        X_train_scaled, X_test_scaled, Y_train_scaled, Y_test_scaled = self.get_splited_data()
 
-        #X, y = self.normalize_x(X), self.normalize_y(y)
-        y = y.reshape(-1, 1)
-        X_train, X_test = X[:int(X.shape[0] * .8), :], X[int(X.shape[0] * .8):, :]
+        #convert the 2D datasets to to 3D datasets
+        X_train_reshaped = np.zeros(shape=(int(X_train_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]), dtype=np.float32)
+        X_test_reshaped = np.zeros(shape=(int(X_test_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]), dtype=np.float32)
+        for i in range(X_train_reshaped.shape[0]):
+            X_train_reshaped[i] = X_train_scaled[i:i + 1, :]
 
-        y_train, y_test = y[:int(X.shape[0] * .8), :], y[int(X.shape[0] * .8):, :]
+        for i in range(X_test_reshaped.shape[0]):
+            X_test_reshaped[i] = X_test_scaled[i:i + 1, :]
 
-        X_train = self.normalize_x(X_train)
-        y_train = self.normalize_y(y_train)
-        y_test = y_test.reshape(-1, 1)
-        train = np.concatenate((y_train, X_train), axis=1)
-        X_train, y_train = self.lag_func(train)
-
-        X_test = self.x_scaler.transform(X_test)
-        y_test = self.y_scaler.transform(y_test)
-        y_test = y_test.reshape(-1, 1)
-        test = np.concatenate((y_test, X_test), axis=1)
-        #y_test = y_test.reshape(-1, 1)
-
-        X_test, y_test = self.lag_func(test)
-
-        return X_train, y_train, X_test, y_test
-
-        """print(y.shape)
-        # split te data to test and train dataset
-        X_train, X_test= X[:int(X.shape[0]*.8), :], X[int(X.shape[0]*.8):,:]
-    
-        y_train, y_test = y[:int(X.shape[0]*.8), :], y[int(X.shape[0]*.8):,:]
-    
-        y_train = y_train.reshape(-1, 1)
-    
-        train = np.concatenate((y_train, X_train), axis=1)
-        X_train, y_train = self.lag_func(train)
-    
-        y_test = y_test.reshape(-1, 1)
-        test = np.concatenate((y_test, X_test), axis=1)
-        X_test, y_test = self.lag_func(test)
-    
-        return X_train, y_train, X_test, y_test
-        """
-    def many_to_one(self):
-
-        return
-
-    def plot(self,column):
-        print(self.raw_data[["Close", "High"]])
-        """"import plotly.express as px
-        df = self.raw_data[[column]]
-        df = df.diff(10)
-        df = df.set_index(self.raw_data.index.values)
-        fig = px.line(df[[column]], x=df.index.values, y=column, title=column)
-        fig.show()"""
+        return X_train_reshaped, X_test_reshaped, Y_train_scaled, Y_test_scaled
 
 
-def model1(n_features, n_steps=7):
-    # define model
-    model = Sequential()
-    model.add(LSTM(100, activation='relu', return_sequences=True, input_shape=(n_steps, n_features)))
-
-    model.add(LSTM(100, activation='relu',return_sequences=True, stateful=True))
-    model.add(Dense(n_features))
-    model.compile(optimizer='adam', loss='mse')
-    return model
 if __name__ == "__main__":
 
     data = LSTM_data()
-    data.plot("Close")
-    """X_train, y_train, X_test, y_test = data.get_memory()
-    model=model1(X_train.shape[1])
-    print(X_test.shape)
-    history = model.fit(X_train, y_train, epochs=50,  validation_data=(X_test, y_test), verbose=2,
-                        shuffle=False)
-"""
+
+
+"""X,Y = self.get_XY()
+
+        #split the data to test and train sets
+        X_train, X_test = X[:int(X.shape[0] * .8), :], X[int(X.shape[0] * .8):, :]
+        y_train, y_test = Y[:int(X.shape[0] * .8), :], Y[int(X.shape[0] * .8):, :]
+
+        #normalize the explicative variables
+        X_train_scaled = self.x_scaler.fit_transform(X_train)
+        X_test_scaled = self.x_scaler.transform(X_test)
+
+        #normalize the dependant variable
+        Y_train_scaled = self.y_scaler .fit_transform(y_train)
+        Y_test_scaled = self.y_scaler .transform(y_test)"""
 
 
 
