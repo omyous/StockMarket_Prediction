@@ -150,6 +150,8 @@ class LSTM_data():
         self.lag:int = 5
         self.x_scaler = MinMaxScaler()
         self.y_scaler = MinMaxScaler()
+        self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
+
 
 
     def get_XY(self):

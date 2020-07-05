@@ -5,42 +5,16 @@
 	margin: 0;
 	padding: 0;
 }
-
 .logo{
 	cursor: pointer;
 	margin-right: auto;	
 }
-
-li, a , button {
-	font-family: "Montserrat", sans-serif;
-	font-weight: 500;
-	font-size: 16px;
-	text-decoration: none;
-}
-
 header{
 	display: flex;
 	justify-content: flex-end;
-	align-items: center;
-	padding: 20px 10%;
-	background-color: white;
+	padding: 10px 5%;
+	background-color: #60545c;
 }
-
-
-
-
-
-.nav_links li{
-	display: inline-block;
-	padding: 0px 20px;
-}
-
-.nav_links li a{
-	transition: all 0.3s ease 0s;
-	color: black;
-}
-
-
 button{
 	color:lightseagreen;
 	margin-top: 20px;
@@ -52,16 +26,13 @@ button{
 	cursor: pointer;
 	transition: all 0.3s ease 0s;
 
-
 }
-
 
 button.btn1{
 	font-family: Arial, Helvetica, sans-serif;
 	margin-top: 60px;
 	margin-left: 650px;
 	font-size: 26px;
-	background:    black;
 	border-radius: 11px;
 	border: none;
 	padding:       20px 45px;
@@ -72,12 +43,20 @@ button.btn1{
 button.btn1:hover{
 	background-color: gray;
 }
+button.news{
+	font-family: Arial, Helvetica, sans-serif;
+}
 button.news:hover{
 	background-color: gray;
+}
+button.contact{
+	display:inline-block;
+	font-family: Arial, Helvetica, sans-serif;
 }
 button.contact:hover{
 	background-color: gray;
 }
+
 body{
 	background: url(../img/stock3.jpeg) no-repeat;
 	background-size: 100%;

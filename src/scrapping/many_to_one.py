@@ -34,6 +34,20 @@ def plot_train_loss(history):
     pyplot.xlabel('epoch')
     pyplot.legend(['train', 'validation'], loc='upper right')
     pyplot.show()
+
+def evaluate(regressor, X_test, Y_test, dataset_object):
+    yhat = regressor.predict(X_test)
+    # invert scaling for forecast
+    inv_yhat = dataset_object.y_scaler.inverse_transform(yhat)
+    inv_yhat = inv_yhat[:, 0]
+    # invert scaling for actual
+    test_y = Y_test.reshape((len(Y_test), 1))
+    inv_y = dataset_object.y_scaler.inverse_transform(test_y)
+    inv_y = inv_y[:, 0]
+    # calculate RMSE
+    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
+    print('Test RMSE: %.3f' % rmse)
+    plot_preds(inv_yhat, inv_y)
 def plot_preds(inv_yhat, inv_y):
     pyplot.plot(inv_yhat)
     pyplot.plot(inv_y)
@@ -49,35 +63,31 @@ def many_to_one(dataset_object: LSTM_data):
     # Adding the first LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
                        return_sequences=True,
+                       activation=ACTIVATION,
                        input_shape=(X_train.shape[1], X_train.shape[2]),
-                       bias_regularizer=regularizers.l2(1e-4),
-                       activity_regularizer=regularizers.l2(1e-5)
+                       bias_regularizer=regularizers.l2(BIAIS_REG),
+                       activity_regularizer=regularizers.l2(L2)
                        ))
-    regressor.add(Dropout(DROPOUT))
     regressor.add(LSTM(units=NEURONS,
+                       activation=ACTIVATION,
                        return_sequences=True,
-                       bias_regularizer=regularizers.l2(1e-4),
-                       activity_regularizer=regularizers.l2(1e-5)
+                       bias_regularizer=regularizers.l2(BIAIS_REG),
+                       activity_regularizer=regularizers.l2(L2)
 
                        ))
-    regressor.add(Dropout(DROPOUT))
     # Adding a second LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
+                       activation=ACTIVATION,
                        return_sequences=True,
-                        bias_regularizer=regularizers.l2(1e-4),
-                        activity_regularizer=regularizers.l2(1e-5)
+                       bias_regularizer=regularizers.l2(BIAIS_REG),
+                       activity_regularizer=regularizers.l2(L2)
                   ))
-    regressor.add(Dropout(DROPOUT))
-    # Adding a fourth LSTM layer and some Dropout regularisation
-    regressor.add(LSTM(units=NEURONS,
-                  bias_regularizer=regularizers.l2(1e-4),
-                  activity_regularizer=regularizers.l2(1e-5)
-                       ))
     regressor.add(Dropout(DROPOUT))
     # Adding the output layer
     regressor.add(Dense(units=1,
+                        activation="relu",
                         bias_regularizer=regularizers.l2(1e-4),
-                  activity_regularizer=regularizers.l2(1e-5)
+                        activity_regularizer=regularizers.l2(1e-5)
                         )
                   )
     optim = Adam()
@@ -85,21 +95,17 @@ def many_to_one(dataset_object: LSTM_data):
     regressor.compile(optimizer=optim, loss='mean_squared_error')
 
     # Fitting the RNN to the Training set
-    history= regressor.fit(X_train, Y_train, epochs=800, validation_data=(X_test, Y_test))
+    history= regressor.fit(X_train,
+                           Y_train,
+                           epochs=800,
+                           batch_size=BATCH_SIZE,
+                           validation_data=(X_test, Y_test),
+                           callbacks=[REDUCE_LR, EARLY_STOP]
+                           )
     plot_train_loss(history)
+    evaluate(regressor,X_test,Y_test, dataset_object)
 
-    yhat = regressor.predict(X_test)
-    # invert scaling for forecast
-    inv_yhat = dataset_object.y_scaler.inverse_transform(yhat)
-    inv_yhat = inv_yhat[:, 0]
-    # invert scaling for actual
-    test_y = Y_test.reshape((len(Y_test), 1))
-    inv_y = dataset_object.y_scaler.inverse_transform(test_y)
-    inv_y = inv_y[:, 0]
-    # calculate RMSE
-    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-    print('Test RMSE: %.3f' % rmse)
-    plot_preds(inv_yhat, inv_y)
+
 
 def attn_many_to_one(dataset_object: LSTM_data):
 
@@ -147,17 +153,10 @@ def attn_many_to_one(dataset_object: LSTM_data):
                         batch_size=BATCH_SIZE,
                         validation_data=(X_test, Y_test),
                         callbacks=[EARLY_STOP, REDUCE_LR])
-    model.save("data/weights/attn_based_lstm.h5")
+    model.save("data/weights/attn_based_lstm")
     plot_train_loss(history)
-    """pyplot.plot(history.history['loss'])
-    pyplot.plot(history.history['val_loss'])
-    pyplot.title('model train vs validation loss')
-    pyplot.ylabel('loss')
-    pyplot.xlabel('epoch')
-    pyplot.legend(['train', 'validation'], loc='upper right')
-    pyplot.show()"""
-
-    #evaluate the model
+    evaluate(model,X_test,Y_test, dataset_object)
+    """#evaluate the model
     yhat = model.predict(X_test)
     print(yhat.shape, Y_test.shape)
     # invert scaling for forecast
@@ -170,48 +169,45 @@ def attn_many_to_one(dataset_object: LSTM_data):
     # calculate RMSE
     rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
     print('Test RMSE: %.3f' % rmse)
-    plot_preds(inv_yhat, inv_y)
-    """ pyplot.plot(inv_yhat)
-    pyplot.plot(inv_y)
-    pyplot.title('y_preds vs real y')
-    pyplot.ylabel('preds')
-    pyplot.xlabel('epoch')
-    pyplot.legend(['predictions', 'real values'], loc='upper right')
-    pyplot.show()"""
-
-
-
+    plot_preds(inv_yhat, inv_y)"""
 
 def dense_net(dataset_object:LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_splited_data()
     regressor = Sequential()
     regressor.add(Dense(units=NEURONS,
-                        bias_regularizer=regularizers.l2(1e-4),
-                  activity_regularizer=regularizers.l2(1e-5)
+                        activation=ACTIVATION,
+                        bias_regularizer=regularizers.l2(BIAIS_REG),
+                        activity_regularizer=regularizers.l2(L2)
                         )
                   )
     regressor.add(Dropout(DROPOUT))
     regressor.add(Dense(units=int(NEURONS/2),
-                        bias_regularizer=regularizers.l2(1e-4),
-                        activity_regularizer=regularizers.l2(1e-5)
+                        activation=ACTIVATION,
+                        bias_regularizer=regularizers.l2(BIAIS_REG),
+                       activity_regularizer=regularizers.l2(L2)
                         )
                   )
     regressor.add(Dropout(DROPOUT))
     regressor.add(Dense(units=int(NEURONS / 4),
-                        bias_regularizer=regularizers.l2(1e-4),
-                        activity_regularizer=regularizers.l2(1e-5)
+                        bias_regularizer=regularizers.l2(BIAIS_REG),
+                        activity_regularizer=regularizers.l2(L2)
                         ))
     regressor.add(Dropout(DROPOUT))
     regressor.add(Dense(units=1,
-                        bias_regularizer=regularizers.l2(1e-4),
-                        activity_regularizer=regularizers.l2(1e-5)
+                        bias_regularizer=regularizers.l2(BIAIS_REG),
+                        activity_regularizer=regularizers.l2(L2)
                         ))
     optim = Adam()
     # Compiling the RNN
     regressor.compile(optimizer=optim, loss='mean_squared_error')
 
     # Fitting the RNN to the Training set
-    history= regressor.fit(X_train, Y_train, epochs=800, validation_data=(X_test, Y_test), callbacks=[EARLY_STOP, REDUCE_LR])
+    history= regressor.fit(X_train,
+                           Y_train,
+                           epochs=800,
+                           batch_size=BATCH_SIZE,
+                           validation_data=(X_test, Y_test),
+                           callbacks=[EARLY_STOP, REDUCE_LR])
     pyplot.plot(history.history['loss'])
     pyplot.plot(history.history['val_loss'])
     pyplot.title('model train vs validation loss')
@@ -219,26 +215,7 @@ def dense_net(dataset_object:LSTM_data):
     pyplot.xlabel('epoch')
     pyplot.legend(['train', 'validation'], loc='upper right')
     pyplot.show()
-
-    # evaluate the model
-    yhat = regressor.predict(X_test)
-    # invert scaling for forecast
-    inv_yhat = dataset_object.y_scaler.inverse_transform(yhat)
-    inv_yhat = inv_yhat[:, 0]
-    # invert scaling for actual
-    test_y = Y_test.reshape((len(Y_test), 1))
-    inv_y = dataset_object.y_scaler.inverse_transform(test_y)
-    inv_y = inv_y[:, 0]
-    # calculate RMSE
-    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-    print('Test RMSE: %.3f' % rmse)
-    pyplot.plot(inv_yhat)
-    pyplot.plot(inv_y)
-    pyplot.title('y_preds vs real y')
-    pyplot.ylabel('preds')
-    pyplot.xlabel('epoch')
-    pyplot.legend(['predictions', 'real values'], loc='upper right')
-    pyplot.show()
+    evaluate(regressor, X_test,Y_test, dataset_object)
 
 if __name__=="__main__":
 
