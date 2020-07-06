@@ -18,16 +18,19 @@
 
      <!-- Main Input For Receiving Query to our ML -->
     <form action="{{ url_for('predict')}}"method="post">
-        <SELECT name="nom" size="1">
-        <OPTION> Attention based Lstm model
-        <OPTION> Light Lstm model
-        <OPTION> Dense net model
+        <h3>Choose the prediction mode</h3>
+        <SELECT class="mode" name="mode" size="1">
+            <OPTION> Financial sentiment analysis forecasting
+            <OPTION> Free sentiment analysis forecasting
+        </SELECT><br><br><br>
+        <h3>Choose your prediction model</h3>
+            <SELECT class="model" name="model" size="1">
+            <OPTION> Attention based Lstm model
+            <OPTION> Light Lstm model
+            <OPTION> Dense net model
         </SELECT>
-    	<input type="text" name="experience" placeholder="Experience"  />
-        <input type="text" name="test_score" placeholder="Test Score"  />
-		<input type="text" name="interview_score" placeholder="Interview Score" />
 
-        <button type="submit" class="btn btn-primary btn-block btn-large">Predict</button>
+        <button type="submit" class="pred">Predict</button>
     </form>
 
    <br>

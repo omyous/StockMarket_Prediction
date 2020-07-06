@@ -4,10 +4,12 @@ from tensorflow_core.python.keras.callbacks import ReduceLROnPlateau, EarlyStopp
 from matplotlib import pyplot
 from tensorflow_core import sqrt
 from tensorflow.python.keras import Input, Model
-from tensorflow.python.keras.losses import mean_squared_error
+from tensorflow.python.keras.losses import mean_squared_error, mean_absolute_error
 from tensorflow.keras.layers import Dense, Activation, Dropout, LSTM
 from tensorflow.keras import regularizers
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import MeanAbsolutePercentageError as MAPE
+from tensorflow.keras.metrics import Accuracy
 
 ACTIVATION = "tanh"
 NEURONS: int = 500
@@ -37,6 +39,11 @@ def plot_train_loss(history):
 
 def evaluate(regressor, X_test, Y_test, dataset_object):
     yhat = regressor.predict(X_test)
+    Y_test_ = Y_test[:,0]
+    yhat_= yhat[:,0]
+    print('Test RMSE: %.3f' % mean_squared_error(Y_test_, yhat_).numpy())
+    print('Test MAE: %.3f' % mean_absolute_error(Y_test_, yhat_).numpy())
+    #print(MAPE(Y_test, yhat))
     # invert scaling for forecast
     inv_yhat = dataset_object.y_scaler.inverse_transform(yhat)
     inv_yhat = inv_yhat[:, 0]
@@ -45,9 +52,12 @@ def evaluate(regressor, X_test, Y_test, dataset_object):
     inv_y = dataset_object.y_scaler.inverse_transform(test_y)
     inv_y = inv_y[:, 0]
     # calculate RMSE
-    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
+    rmse = mean_squared_error(inv_y, inv_yhat)
     print('Test RMSE: %.3f' % rmse)
+    print('Test MAE: %.3f' % mean_absolute_error(inv_y, inv_yhat))
+
     plot_preds(inv_yhat, inv_y)
+
 def plot_preds(inv_yhat, inv_y):
     pyplot.plot(inv_yhat)
     pyplot.plot(inv_y)
@@ -56,9 +66,9 @@ def plot_preds(inv_yhat, inv_y):
     pyplot.xlabel('epoch')
     pyplot.legend(['predictions', 'real values'], loc='upper right')
     pyplot.show()
-def many_to_one(dataset_object: LSTM_data):
+def free_attn_lstm(dataset_object: LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-
+    X_train, X_test = X_train[:, :, :-2], X_test[:, :, :-2]
     regressor = Sequential()
     # Adding the first LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
@@ -68,6 +78,7 @@ def many_to_one(dataset_object: LSTM_data):
                        bias_regularizer=regularizers.l2(BIAIS_REG),
                        activity_regularizer=regularizers.l2(L2)
                        ))
+    regressor.add(Dropout(DROPOUT))
     regressor.add(LSTM(units=NEURONS,
                        activation=ACTIVATION,
                        return_sequences=True,
@@ -75,19 +86,19 @@ def many_to_one(dataset_object: LSTM_data):
                        activity_regularizer=regularizers.l2(L2)
 
                        ))
+    regressor.add(Dropout(DROPOUT))
     # Adding a second LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
                        activation=ACTIVATION,
-                       return_sequences=True,
                        bias_regularizer=regularizers.l2(BIAIS_REG),
                        activity_regularizer=regularizers.l2(L2)
                   ))
     regressor.add(Dropout(DROPOUT))
     # Adding the output layer
     regressor.add(Dense(units=1,
-                        activation="relu",
-                        bias_regularizer=regularizers.l2(1e-4),
-                        activity_regularizer=regularizers.l2(1e-5)
+                        activation='relu',
+                        bias_regularizer=regularizers.l2(BIAIS_REG),
+                       activity_regularizer=regularizers.l2(L2)
                         )
                   )
     optim = Adam()
@@ -97,16 +108,17 @@ def many_to_one(dataset_object: LSTM_data):
     # Fitting the RNN to the Training set
     history= regressor.fit(X_train,
                            Y_train,
-                           epochs=800,
+                           epochs=EPOCHS,
                            batch_size=BATCH_SIZE,
                            validation_data=(X_test, Y_test),
                            callbacks=[REDUCE_LR, EARLY_STOP]
                            )
+    regressor.save("data/weights/free_attn_lstm_no_senti")
     plot_train_loss(history)
     evaluate(regressor,X_test,Y_test, dataset_object)
 
 
-
+# ---------------------------------------------- Attention based lstm ----------------------------------------------#
 def attn_many_to_one(dataset_object: LSTM_data):
 
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
@@ -142,58 +154,48 @@ def attn_many_to_one(dataset_object: LSTM_data):
                     activity_regularizer=regularizers.l2(L2)
                     )(att_out)
 
-
     model = Model(inputs=[i], outputs=[outputs])
     optim = Adam()
-    model.compile(optimizer=optim, loss='mean_squared_error')
+    model.compile(optimizer=optim,
+                  loss=['mean_squared_error']
+                  )
 
     # Fitting the RNN to the Training set
     history = model.fit(X_train, Y_train,
                         epochs=EPOCHS,
                         batch_size=BATCH_SIZE,
                         validation_data=(X_test, Y_test),
-                        callbacks=[EARLY_STOP, REDUCE_LR])
+                        callbacks=[EARLY_STOP, REDUCE_LR]
+                        )
     model.save("data/weights/attn_based_lstm")
     plot_train_loss(history)
     evaluate(model,X_test,Y_test, dataset_object)
-    """#evaluate the model
-    yhat = model.predict(X_test)
-    print(yhat.shape, Y_test.shape)
-    # invert scaling for forecast
-    inv_yhat = dataset_object.y_scaler.inverse_transform(yhat)
-    inv_yhat = inv_yhat[:, 0]
-    # invert scaling for actual
-    test_y = Y_test.reshape((len(Y_test), 1))
-    inv_y = dataset_object.y_scaler.inverse_transform(test_y)
-    inv_y = inv_y[:, 0]
-    # calculate RMSE
-    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-    print('Test RMSE: %.3f' % rmse)
-    plot_preds(inv_yhat, inv_y)"""
 
+#------------------------------------------- Dense net ----------------------------------#
 def dense_net(dataset_object:LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_splited_data()
+    #X_train, X_test = X_train[:, :-2], X_test[:, :-2]
     regressor = Sequential()
-    regressor.add(Dense(units=NEURONS,
-                        activation=ACTIVATION,
+
+    regressor.add(Dense(units=EPOCHS,
+                        activation='relu',
                         bias_regularizer=regularizers.l2(BIAIS_REG),
                         activity_regularizer=regularizers.l2(L2)
-                        )
-                  )
-    regressor.add(Dropout(DROPOUT))
-    regressor.add(Dense(units=int(NEURONS/2),
-                        activation=ACTIVATION,
+                        ))
+
+    regressor.add(Dense(units=EPOCHS,
+                        activation='relu',
                         bias_regularizer=regularizers.l2(BIAIS_REG),
-                       activity_regularizer=regularizers.l2(L2)
-                        )
-                  )
-    regressor.add(Dropout(DROPOUT))
-    regressor.add(Dense(units=int(NEURONS / 4),
+                        activity_regularizer=regularizers.l2(L2)
+                        ))
+    regressor.add(Dense(units=EPOCHS,
+                        activation='relu',
                         bias_regularizer=regularizers.l2(BIAIS_REG),
                         activity_regularizer=regularizers.l2(L2)
                         ))
     regressor.add(Dropout(DROPOUT))
     regressor.add(Dense(units=1,
+                        activation='relu',
                         bias_regularizer=regularizers.l2(BIAIS_REG),
                         activity_regularizer=regularizers.l2(L2)
                         ))
@@ -204,24 +206,19 @@ def dense_net(dataset_object:LSTM_data):
     # Fitting the RNN to the Training set
     history= regressor.fit(X_train,
                            Y_train,
-                           epochs=800,
+                           epochs=EPOCHS,
                            batch_size=BATCH_SIZE,
                            validation_data=(X_test, Y_test),
                            callbacks=[EARLY_STOP, REDUCE_LR])
-    pyplot.plot(history.history['loss'])
-    pyplot.plot(history.history['val_loss'])
-    pyplot.title('model train vs validation loss')
-    pyplot.ylabel('loss')
-    pyplot.xlabel('epoch')
-    pyplot.legend(['train', 'validation'], loc='upper right')
-    pyplot.show()
+    regressor.save("data/weights/dense_net")
+    plot_train_loss(history)
     evaluate(regressor, X_test,Y_test, dataset_object)
 
 if __name__=="__main__":
 
-    attn_many_to_one(LSTM_data())
-    #many_to_one(LSTM_data())
-    #dense_net(LSTM_data())
+    #attn_many_to_one(LSTM_data())
+    #free_attn_lstm(LSTM_data())
+    dense_net(LSTM_data())
 
 """data = pd.read_csv('data/merged.csv',
                        engine='python',
