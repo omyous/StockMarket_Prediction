@@ -2,7 +2,6 @@ import GetOldTweets3 as got
 from pathlib import Path
 import datetime as dt
 import pandas as pd
-#2020-06-24 09:11:16.750306
 
 class Tweets():
     def __init__(self, company: str = "Google business tech"):
@@ -32,7 +31,7 @@ class Tweets():
         .setLang('en')
 
     def get_tweets(self):
-        years: list = ["2020"]
+        years: list = ["2020"]#2018,2019
         months: list = ["01","02","03","04"]#"01","02","03","04","05","06","07","08","09","10","11","12"
         days: list = ["01","02","03","04","05", "06", "07", "08", "09", "10",
                       "11", "12", "13", "14","15", "16", "17", "18","19",

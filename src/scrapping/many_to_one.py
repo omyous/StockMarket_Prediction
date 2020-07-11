@@ -1,3 +1,5 @@
+from tensorflow_core.python.keras import Sequential
+
 from src.scrapping.attention import *
 from src.scrapping.preprocessing import *
 from tensorflow_core.python.keras.callbacks import ReduceLROnPlateau, EarlyStopping
@@ -68,7 +70,7 @@ def plot_preds(inv_yhat, inv_y):
     pyplot.show()
 def free_attn_lstm(dataset_object: LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-    X_train, X_test = X_train[:, :, :-2], X_test[:, :, :-2]
+    X_train, X_test = X_train[:, :, :-12], X_test[:, :, :-12]
     regressor = Sequential()
     # Adding the first LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
@@ -122,7 +124,7 @@ def free_attn_lstm(dataset_object: LSTM_data):
 def attn_many_to_one(dataset_object: LSTM_data):
 
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-    #X_train, X_test = X_train[:, :, :-2], X_test[:, :, :-2]
+    X_train, X_test = X_train[:, :, :-12], X_test[:, :, :-12]
 
     i = Input(shape=(X_train.shape[1], X_train.shape[2]))
 
@@ -167,14 +169,14 @@ def attn_many_to_one(dataset_object: LSTM_data):
                         validation_data=(X_test, Y_test),
                         callbacks=[EARLY_STOP, REDUCE_LR]
                         )
-    model.save("data/weights/attn_based_lstm")
+    model.save("data/weights/attn_based_lstm_no_senti")
     plot_train_loss(history)
     evaluate(model,X_test,Y_test, dataset_object)
 
 #------------------------------------------- Dense net ----------------------------------#
 def dense_net(dataset_object:LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_splited_data()
-    #X_train, X_test = X_train[:, :-2], X_test[:, :-2]
+    #X_train, X_test = X_train[:, :-12], X_test[:, :-12]
     regressor = Sequential()
 
     regressor.add(Dense(units=EPOCHS,
@@ -210,7 +212,7 @@ def dense_net(dataset_object:LSTM_data):
                            batch_size=BATCH_SIZE,
                            validation_data=(X_test, Y_test),
                            callbacks=[EARLY_STOP, REDUCE_LR])
-    regressor.save("data/weights/dense_net")
+    regressor.save("data/weights/dense")
     plot_train_loss(history)
     evaluate(regressor, X_test,Y_test, dataset_object)
 

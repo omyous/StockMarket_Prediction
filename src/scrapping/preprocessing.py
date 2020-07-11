@@ -1,13 +1,8 @@
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.python.keras import Sequential
-from tensorflow.python.keras.layers import LSTM, Dense
-
 from machine_learning.sentiments_analysis import *
-import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 pd.options.display.max_rows = 999
@@ -80,10 +75,18 @@ class Custom_dataset():
         return clean_df2
 
     def drop_tweetsduplicates(self):
+        """
+        We found that some tweets were duplicated for the same day but not the same hour. For that, we decided de implement
+        a function which drop the duplicated tweets for each day
+        :return:
+        """
         dates = self.tweets["date"].unique()
+        #define a dataframe which will contain the cleaned tweets
         clean_df1 = pd.DataFrame(columns=["date", "text"])
         for d in dates:
+            #for each day we drop all the duplicated tweets
             df_ = self.tweets[self.tweets["date"] == d]
+            #append the slice of cleaned tweets for the dat d in the the clean dataframe
             clean_df1 = clean_df1.append(self.tweets_sim(df_))
         return clean_df1
 
@@ -126,8 +129,8 @@ class Custom_dataset():
             if not i in tweets_dates:
                 print("insérer ",i," dans tweets")
                 tweets = tweets.append({'date': i,
-                                        'positive': tweets["positive"].median(),
-                                        'negative':tweets['negative'].median()
+                                        'positive': 0.0,
+                                        'negative':0.0
                                         },
                                        ignore_index=True)
         
@@ -147,10 +150,11 @@ class LSTM_data():
                                     index_col=0
                                     )
 
+        self.add_noise()
         self.lag:int = 5
         self.x_scaler = MinMaxScaler()
         self.y_scaler = MinMaxScaler()
-        self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
+        #self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
 
 
 
@@ -159,7 +163,6 @@ class LSTM_data():
         Y = data[["Close"]]
         Y.columns = ["Y"]
         # shift the features
-
         cols = ["High", "Low", "Open", "Volume", "Adj Close", "positive", "negative"]
         dres = data
         lag_value = 5
@@ -180,7 +183,20 @@ class LSTM_data():
             dy = dy.merge(dytemps, on='Date')
         X = X.merge(dy, on='Date')
         X = X.dropna()
-
+        X.columns = [ 'High_lag1', 'Low_lag1', 'Open_lag1', 'Volume_lag1', 'Adj Close_lag1',
+                     'High_lag2', 'Low_lag2', 'Open_lag2', 'Volume_lag2', 'Adj Close_lag2',
+                     'High_lag3', 'Low_lag3', 'Open_lag3', 'Volume_lag3', 'Adj Close_lag3',
+                     'High_lag4', 'Low_lag4', 'Open_lag4', 'Volume_lag4', 'Adj Close_lag4',
+                     'High_lag5', 'Low_lag5', 'Open_lag5', 'Volume_lag5', 'Adj Close_lag5',
+                     'Y_lag1', 'Y_lag2', 'Y_lag3', 'Y_lag4', 'Y_lag5',
+                     'High', 'Low', 'Open', 'Close', 'Volume', 'Adj Close',
+                     'positive', 'negative',
+                     'positive_lag1', 'negative_lag1',
+                     'positive_lag2', 'negative_lag2',
+                     'positive_lag3', 'negative_lag3',
+                     'positive_lag4', 'negative_lag4',
+                     'positive_lag5', 'negative_lag5'
+                     ]
         Y = X[["Close"]].values
         X = X.drop(["Close"], axis=1).values
         return X,Y
