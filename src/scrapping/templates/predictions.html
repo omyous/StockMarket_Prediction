@@ -23,19 +23,18 @@
             <OPTION> Financial sentiment analysis forecasting
             <OPTION> Free sentiment analysis forecasting
         </SELECT><br><br><br>
-        <h3>Choose your prediction model</h3>
+        <h3>Choose the prediction model</h3>
             <SELECT class="model" name="model" size="1">
             <OPTION> Attention based Lstm model
-            <OPTION> Light Lstm model
+            <OPTION> Free attention lstm model
             <OPTION> Dense net model
-        </SELECT>
+        </SELECT> <br><br><br>
 
         <button type="submit" class="pred">Predict</button>
-    </form>
+    </form><br><br>
 
-   <br>
-   <br>
-     <b><p>{{ prediction_text }}</p></b>
+     <input type="text" name="interview_score" placeholder="{{ prediction_text }}" />
+
 
  </div>
 

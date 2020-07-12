@@ -7,8 +7,9 @@ class attention(Layer):
         super(attention,self).__init__(**kwargs)
 
     def build(self,input_shape):
-        #create the vector of weights
+        #create the vector of weights of size equal to number of features
         self.W=self.add_weight(name="att_weight",shape=(input_shape[-1],1),initializer="normal")
+
         #create the vectors of biases
         self.b=self.add_weight(name="att_bias",shape=(input_shape[1],1),initializer="zeros")
         super(attention, self).build(input_shape)

@@ -4,7 +4,6 @@ import datetime as dt
 import pandas_datareader as web
 import pandas as pd
 
-
 class Stock_data():
     def __init__(self):
         self.ticker = "GOOGL"
@@ -72,7 +71,6 @@ class Stock_data():
     @raw_data.setter
     def raw_data(self, value):
         self._raw_data = value
-
 
 if __name__ == '__main__':
     s = Stock_data()

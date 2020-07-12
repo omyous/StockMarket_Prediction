@@ -1,8 +1,11 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+import tensorflow as tf
+from tensorflow_core.python.keras import Sequential
+
 from src.scrapping.attention import *
 from src.scrapping.preprocessing import *
-from tensorflow_core.python.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from matplotlib import pyplot
-from tensorflow_core import sqrt
 from tensorflow.python.keras import Input, Model
 from tensorflow.python.keras.losses import mean_squared_error, mean_absolute_error
 from tensorflow.keras.layers import Dense, Activation, Dropout, LSTM
@@ -31,13 +34,13 @@ EARLY_STOP= EarlyStopping(monitor='val_loss',
 def plot_train_loss(history):
     pyplot.plot(history.history['loss'])
     pyplot.plot(history.history['val_loss'])
-    pyplot.title('model train vs validation loss')
+    pyplot.title('train loss vs validation loss')
     pyplot.ylabel('loss')
     pyplot.xlabel('epoch')
     pyplot.legend(['train', 'validation'], loc='upper right')
     pyplot.show()
 
-def evaluate(regressor, X_test, Y_test, dataset_object):
+def evaluate(regressor, X_test, Y_test, dataset_object, name:str, senti:str):
     yhat = regressor.predict(X_test)
     Y_test_ = Y_test[:,0]
     yhat_= yhat[:,0]
@@ -51,6 +54,11 @@ def evaluate(regressor, X_test, Y_test, dataset_object):
     test_y = Y_test.reshape((len(Y_test), 1))
     inv_y = dataset_object.y_scaler.inverse_transform(test_y)
     inv_y = inv_y[:, 0]
+    print(inv_y.shape, inv_yhat.shape, dataset_object.test_dates.shape)
+    pd.DataFrame({"predictions": inv_yhat,
+                  "Close": inv_y,
+                  "Date": dataset_object.test_dates
+                  }).to_csv("data/"+name+"_senti_"+senti+".csv", index=False)
     # calculate RMSE
     rmse = mean_squared_error(inv_y, inv_yhat)
     print('Test RMSE: %.3f' % rmse)
@@ -68,12 +76,13 @@ def plot_preds(inv_yhat, inv_y):
     pyplot.show()
 def free_attn_lstm(dataset_object: LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-    X_train, X_test = X_train[:, :, :-2], X_test[:, :, :-2]
+    X_train, X_test = X_train[:, :, :-12], X_test[:, :, :-12]
     regressor = Sequential()
     # Adding the first LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
                        return_sequences=True,
                        activation=ACTIVATION,
+                       recurrent_activation="sigmoid",
                        input_shape=(X_train.shape[1], X_train.shape[2]),
                        bias_regularizer=regularizers.l2(BIAIS_REG),
                        activity_regularizer=regularizers.l2(L2)
@@ -81,6 +90,7 @@ def free_attn_lstm(dataset_object: LSTM_data):
     regressor.add(Dropout(DROPOUT))
     regressor.add(LSTM(units=NEURONS,
                        activation=ACTIVATION,
+                       recurrent_activation="sigmoid",
                        return_sequences=True,
                        bias_regularizer=regularizers.l2(BIAIS_REG),
                        activity_regularizer=regularizers.l2(L2)
@@ -90,6 +100,7 @@ def free_attn_lstm(dataset_object: LSTM_data):
     # Adding a second LSTM layer and some Dropout regularisation
     regressor.add(LSTM(units=NEURONS,
                        activation=ACTIVATION,
+                       recurrent_activation="sigmoid",
                        bias_regularizer=regularizers.l2(BIAIS_REG),
                        activity_regularizer=regularizers.l2(L2)
                   ))
@@ -115,33 +126,36 @@ def free_attn_lstm(dataset_object: LSTM_data):
                            )
     regressor.save("data/weights/free_attn_lstm_no_senti")
     plot_train_loss(history)
-    evaluate(regressor,X_test,Y_test, dataset_object)
+    evaluate(regressor,X_test,Y_test, dataset_object,name="free_attn_lstm", senti="no")
 
 
 # ---------------------------------------------- Attention based lstm ----------------------------------------------#
 def attn_many_to_one(dataset_object: LSTM_data):
 
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-    #X_train, X_test = X_train[:, :, :-2], X_test[:, :, :-2]
+    X_train, X_test = X_train[:, :, :-10], X_test[:, :, :-10]
 
     i = Input(shape=(X_train.shape[1], X_train.shape[2]))
-
 
     att_in = LSTM(NEURONS,
                     return_sequences=True,
                     activation=ACTIVATION,
-                    activity_regularizer=regularizers.l2(L2) ,
+                  recurrent_activation="sigmoid",
+                    activity_regularizer=regularizers.l2(L2),
                     bias_regularizer=regularizers.l2(BIAIS_REG),
                   )(i)
+
     att_in = LSTM(NEURONS,
                   return_sequences=True,
                   activation=ACTIVATION,
+                  recurrent_activation="sigmoid",
                   activity_regularizer=regularizers.l2(L2),
                   bias_regularizer=regularizers.l2(BIAIS_REG),
                   )(att_in)
     att_in = LSTM(NEURONS,
                   return_sequences=True,
                   activation=ACTIVATION,
+                  recurrent_activation="sigmoid",
                   activity_regularizer=regularizers.l2(L2),
                   bias_regularizer=regularizers.l2(BIAIS_REG),
                   )(att_in)
@@ -167,14 +181,14 @@ def attn_many_to_one(dataset_object: LSTM_data):
                         validation_data=(X_test, Y_test),
                         callbacks=[EARLY_STOP, REDUCE_LR]
                         )
-    model.save("data/weights/attn_based_lstm")
+    model.save("data/weights/attn_based_lstm_no_senti")
     plot_train_loss(history)
-    evaluate(model,X_test,Y_test, dataset_object)
+    evaluate(model,X_test,Y_test, dataset_object,name="attn_evaluate", senti="no")
 
 #------------------------------------------- Dense net ----------------------------------#
 def dense_net(dataset_object:LSTM_data):
     X_train, X_test, Y_train, Y_test = dataset_object.get_splited_data()
-    #X_train, X_test = X_train[:, :-2], X_test[:, :-2]
+    #X_train, X_test = X_train[:, :-12], X_test[:, :-12]
     regressor = Sequential()
 
     regressor.add(Dense(units=EPOCHS,
@@ -210,9 +224,9 @@ def dense_net(dataset_object:LSTM_data):
                            batch_size=BATCH_SIZE,
                            validation_data=(X_test, Y_test),
                            callbacks=[EARLY_STOP, REDUCE_LR])
-    regressor.save("data/weights/dense_net")
+    regressor.save("data/weights/dense_senti")
     plot_train_loss(history)
-    evaluate(regressor, X_test,Y_test, dataset_object)
+    evaluate(regressor, X_test,Y_test, dataset_object,name="dense", senti="yes")
 
 if __name__=="__main__":
 
