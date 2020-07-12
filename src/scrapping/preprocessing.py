@@ -179,7 +179,7 @@ class LSTM_data():
             dy = dy.merge(dytemps, on='Date')
         X = X.merge(dy, on='Date')
         X = X.dropna()
-        X.columns = ['High_lag1', 'Low_lag1', 'Open_lag1', 'Volume_lag1', 'Adj Close_lag1',
+        X.columns = ['High_lag1', 'Low_lag1', 'Open_lag1', 'Volulag1', 'Adj Close_lag1',
                      'High_lag2', 'Low_lag2', 'Open_lag2', 'Volume_lag2', 'Adj Close_lag2',
                      'High_lag3', 'Low_lag3', 'Open_lag3', 'Volume_lag3', 'Adj Close_lag3',
                      'High_lag4', 'Low_lag4', 'Open_lag4', 'Volume_lag4', 'Adj Close_lag4',
