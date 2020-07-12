@@ -4,8 +4,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from machine_learning.sentiments_analysis import *
 import warnings
+
 warnings.filterwarnings("ignore")
 pd.options.display.max_rows = 999
+
 
 class Custom_dataset():
     def __init__(self):
@@ -18,26 +20,22 @@ class Custom_dataset():
         self.tweets = pd.read_csv(self.tweets_path)
         self.prices = pd.read_csv(self.prices_path)
 
-
     def clean_data(self):
         self.get_data()
         self.clean_tweets()
         self.clean_prices()
 
-
-
-    def get_vectors(self,strs):
+    def get_vectors(self, strs):
         text = [t for t in strs]
         vectorizer = CountVectorizer(text)
         vectorizer.fit(text)
         return vectorizer.transform(text).toarray()
 
-    def get_cosine_sim(self,strs):
+    def get_cosine_sim(self, strs):
         vectors = [t for t in self.get_vectors(strs)]
         return cosine_similarity(vectors)
 
-
-    def tweets_sim(self,df):
+    def tweets_sim(self, df):
         df_ = df
         print(df_)
         # create a clean dataframe
@@ -61,14 +59,14 @@ class Custom_dataset():
                             print("DIFFERENT: ", df_.iloc[[i, j]]["text"])
                             print(result)
                             clean_df2 = clean_df2.append({'date': df.loc[indexes[j]]["date"],
-                                                        'text': df.loc[indexes[j]]["text"]},
-                                                       ignore_index=True)
+                                                          'text': df.loc[indexes[j]]["text"]},
+                                                         ignore_index=True)
 
                     df_.loc[indexes[j]]["text"] = "str"
                     j += 1
                 clean_df2 = clean_df2.append({'date': df.loc[indexes[i]]["date"],
-                                            'text': df.loc[indexes[i]]["text"]},
-                                           ignore_index=True)
+                                              'text': df.loc[indexes[i]]["text"]},
+                                             ignore_index=True)
                 df_.loc[indexes[i]]["text"] = "str"
             i += 1
 
@@ -81,12 +79,12 @@ class Custom_dataset():
         :return:
         """
         dates = self.tweets["date"].unique()
-        #define a dataframe which will contain the cleaned tweets
+        # define a dataframe which will contain the cleaned tweets
         clean_df1 = pd.DataFrame(columns=["date", "text"])
         for d in dates:
-            #for each day we drop all the duplicated tweets
+            # for each day we drop all the duplicated tweets
             df_ = self.tweets[self.tweets["date"] == d]
-            #append the slice of cleaned tweets for the dat d in the the clean dataframe
+            # append the slice of cleaned tweets for the dat d in the the clean dataframe
             clean_df1 = clean_df1.append(self.tweets_sim(df_))
         return clean_df1
 
@@ -95,13 +93,13 @@ class Custom_dataset():
         self.tweets["date"] = pd.to_datetime(self.tweets["date"], format='%Y/%m/%d').dt.date
 
         self.tweets = self.drop_tweetsduplicates()
-        #drop any duplicate post
+        # drop any duplicate post
         self.tweets = self.tweets.drop_duplicates("text")
         self.tweets['expand'] = self.tweets.apply(lambda x: '. '.join([x['text']]), axis=1)
         self.tweets = self.tweets.groupby('date')['expand'].apply(list)
-        #self.tweets["date"] = self.tweets.index.values
+        # self.tweets["date"] = self.tweets.index.values
         self.tweets = pd.DataFrame(data=self.tweets.values, index=self.tweets.index, columns=["text"])
-        #create one daily tweet  intead of many ones
+        # create one daily tweet  intead of many ones
         text = [' '.join(sentence) for sentence in self.tweets["text"]]
         self.tweets["text"] = text
 
@@ -109,7 +107,7 @@ class Custom_dataset():
 
     def clean_prices(self):
 
-        #delete zeros columns
+        # delete zeros columns
         self.prices = self.prices.loc[:, (self.prices != 0).any(axis=0)]
         self.prices["Date"] = pd.to_datetime(self.prices["Date"], format='%Y/%m/%d').dt.date
 
@@ -119,7 +117,7 @@ class Custom_dataset():
 
     def merge_data(self):
         tweets = pd.read_csv("data/tweets_scores.csv")
-        #tweets["date"]=pd.to_datetime(tweets["date"], format='%Y/%m/%d').dt.date
+        # tweets["date"]=pd.to_datetime(tweets["date"], format='%Y/%m/%d').dt.date
         prices = pd.read_csv("data/clean_prices.csv")
 
         tweets_dates = list(tweets["date"])
@@ -127,43 +125,41 @@ class Custom_dataset():
 
         for i in prices_dates:
             if not i in tweets_dates:
-                print("insérer ",i," dans tweets")
+                print("insérer ", i, " dans tweets")
                 tweets = tweets.append({'date': i,
                                         'positive': 0.0,
-                                        'negative':0.0
+                                        'negative': 0.0
                                         },
                                        ignore_index=True)
-        
 
-        tweets=tweets.sort_values("date", ascending=True)
+        tweets = tweets.sort_values("date", ascending=True)
         tweets.to_csv("data/tweets_scores_.csv", index=False)
-        prices=prices.sort_values("Date", ascending=True)
+        prices = prices.sort_values("Date", ascending=True)
         df = tweets.rename(columns={'date': 'Date'})
         df = prices.merge(df, on="Date")
         df.to_csv("data/merged.csv", index=False)
+
 
 ##################################################Preapre the suitable data format for the lstm model ###################################################
 
 class LSTM_data():
     def __init__(self):
-        self.raw_data= pd.read_csv("data/merged.csv",
+        self.raw_data = pd.read_csv("data/merged.csv",
                                     index_col=0
                                     )
 
         self.add_noise()
-        self.lag:int = 5
+        self.lag: int = 5
         self.x_scaler = MinMaxScaler()
         self.y_scaler = MinMaxScaler()
-        #self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
-
-
+        # self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
 
     def get_XY(self):
         data = self.raw_data
         Y = data[["Close"]]
         Y.columns = ["Y"]
         # shift the features
-        cols = ["High", "Low", "Open", "Volume", "Adj Close", "positive", "negative"]
+        cols = ["High", "Low", "Open", "Volume", "Adj Close", "positive", "negative"]  #
         dres = data
         lag_value = 5
 
@@ -183,7 +179,7 @@ class LSTM_data():
             dy = dy.merge(dytemps, on='Date')
         X = X.merge(dy, on='Date')
         X = X.dropna()
-        X.columns = [ 'High_lag1', 'Low_lag1', 'Open_lag1', 'Volume_lag1', 'Adj Close_lag1',
+        X.columns = ['High_lag1', 'Low_lag1', 'Open_lag1', 'Volume_lag1', 'Adj Close_lag1',
                      'High_lag2', 'Low_lag2', 'Open_lag2', 'Volume_lag2', 'Adj Close_lag2',
                      'High_lag3', 'Low_lag3', 'Open_lag3', 'Volume_lag3', 'Adj Close_lag3',
                      'High_lag4', 'Low_lag4', 'Open_lag4', 'Volume_lag4', 'Adj Close_lag4',
@@ -198,17 +194,25 @@ class LSTM_data():
                      'positive_lag5', 'negative_lag5'
                      ]
         Y = X[["Close"]].values
-        X = X.drop(["Close"], axis=1).values
-        return X,Y
+        self.train_dates = X.index.values[:int(X.shape[0] * .8)]
+        self.test_dates = X.index.values[int(X.shape[0] * .8):]
+        X = X.drop(["Close",
+                    "Adj Close",
+                    'Adj Close_lag1',
+                    'Adj Close_lag2',
+                    'Adj Close_lag3',
+                    'Adj Close_lag4',
+                    'Adj Close_lag5'],
+                   axis=1).values
+        return X, Y
+
     def add_noise(self):
         mu, sigma = 0, 0.1
         # creating a noise with the same dimension as the dataset (2,2)
         noise = np.random.normal(mu, sigma, self.raw_data[["positive", "negative"]].shape)
-        self.raw_data[["positive", "negative"]]= np.add(self.raw_data[["positive", "negative"]].values,noise)
+        self.raw_data[["positive", "negative"]] = np.add(self.raw_data[["positive", "negative"]].values, noise)
 
-
-
-    def lag_func(self,data):
+    def lag_func(self, data):
         xs = []
         ys = []
 
@@ -239,9 +243,11 @@ class LSTM_data():
     def get_memory(self):
         X_train_scaled, X_test_scaled, Y_train_scaled, Y_test_scaled = self.get_splited_data()
 
-        #convert the 2D datasets to to 3D datasets
-        X_train_reshaped = np.zeros(shape=(int(X_train_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]), dtype=np.float32)
-        X_test_reshaped = np.zeros(shape=(int(X_test_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]), dtype=np.float32)
+        # convert the 2D datasets to to 3D datasets
+        X_train_reshaped = np.zeros(shape=(int(X_train_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]),
+                                    dtype=np.float32)
+        X_test_reshaped = np.zeros(shape=(int(X_test_scaled.shape[0] / 1), 1, X_train_scaled.shape[1]),
+                                   dtype=np.float32)
         for i in range(X_train_reshaped.shape[0]):
             X_train_reshaped[i] = X_train_scaled[i:i + 1, :]
 
@@ -252,9 +258,7 @@ class LSTM_data():
 
 
 if __name__ == "__main__":
-
     data = LSTM_data()
-
 
 """X,Y = self.get_XY()
 
@@ -269,6 +273,5 @@ if __name__ == "__main__":
         #normalize the dependant variable
         Y_train_scaled = self.y_scaler .fit_transform(y_train)
         Y_test_scaled = self.y_scaler .transform(y_test)"""
-
 
 
