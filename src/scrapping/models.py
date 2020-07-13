@@ -55,10 +55,10 @@ def evaluate(regressor, X_test, Y_test, dataset_object, name:str, senti:str):
     inv_y = dataset_object.y_scaler.inverse_transform(test_y)
     inv_y = inv_y[:, 0]
     print(inv_y.shape, inv_yhat.shape, dataset_object.test_dates.shape)
-    pd.DataFrame({"predictions": inv_yhat,
+    """pd.DataFrame({"predictions": inv_yhat,
                   "Close": inv_y,
                   "Date": dataset_object.test_dates
-                  }).to_csv("data/"+name+"_senti_"+senti+".csv", index=False)
+                  }).to_csv("data/"+name+"_senti_"+senti+".csv", index=False)"""
     # calculate RMSE
     rmse = mean_squared_error(inv_y, inv_yhat)
     print('Test RMSE: %.3f' % rmse)
@@ -133,7 +133,7 @@ def free_attn_lstm(dataset_object: LSTM_data):
 def attn_many_to_one(dataset_object: LSTM_data):
 
     X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
-    X_train, X_test = X_train[:, :, :-10], X_test[:, :, :-10]
+    X_train, X_test = X_train[:, :, :-12], X_test[:, :, :-12]
 
     i = Input(shape=(X_train.shape[1], X_train.shape[2]))
 
@@ -187,8 +187,13 @@ def attn_many_to_one(dataset_object: LSTM_data):
 
 #------------------------------------------- Dense net ----------------------------------#
 def dense_net(dataset_object:LSTM_data):
-    X_train, X_test, Y_train, Y_test = dataset_object.get_splited_data()
-    #X_train, X_test = X_train[:, :-12], X_test[:, :-12]
+    X_train, X_test, Y_train, Y_test = dataset_object.get_memory()
+    print(X_test.shape, X_train.shape)
+    X_train = X_train.reshape(X_train.shape[0],X_train.shape[2])
+
+    X_test=X_test.reshape(X_test.shape[0], X_test.shape[2])
+    X_train, X_test = X_train[:, :-12], X_test[:, :-12]
+    print(X_test.shape, X_train.shape)
     regressor = Sequential()
 
     regressor.add(Dense(units=EPOCHS,
@@ -224,7 +229,7 @@ def dense_net(dataset_object:LSTM_data):
                            batch_size=BATCH_SIZE,
                            validation_data=(X_test, Y_test),
                            callbacks=[EARLY_STOP, REDUCE_LR])
-    regressor.save("data/weights/dense_senti")
+    regressor.save("data/weights/dense_no_senti")
     plot_train_loss(history)
     evaluate(regressor, X_test,Y_test, dataset_object,name="dense", senti="yes")
 
