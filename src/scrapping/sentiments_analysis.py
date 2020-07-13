@@ -10,7 +10,7 @@ from spellchecker import SpellChecker
 class Sentimend_analysis():
     def __init__(self):
         self.lemmatizer = WordNetLemmatizer()
-        self.tweets =  list(pd.read_csv("../scrapping/data/clean_tweets.csv").values)
+        self.tweets =  list(pd.read_csv("data/clean_tweets.csv").values)
 
 
     def penn_to_wn(self, tag):
@@ -87,7 +87,7 @@ class Sentimend_analysis():
         for tweet in self.tweets:
             self.senti_polarity(tweet[1])
             data.append([tweet[0], self.positive_tweets, self.negative_tweets])
-        pd.DataFrame(data, columns=["date","positive", "negative"]).to_csv('../scrapping/data/tweets_scores.csv', index=False)
+        pd.DataFrame(data, columns=["date","positive", "negative"]).to_csv('data/tweets_scores.csv', index=False)
 
 if __name__ == "__main__":
     senti = Sentimend_analysis()
