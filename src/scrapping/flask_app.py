@@ -1,7 +1,7 @@
 
 from flask import Flask, request, jsonify, render_template
 from tensorflow.keras import models
-from src.scrapping.many_to_one import *
+from src.scrapping.models import *
 
 
 app = app = Flask(__name__)

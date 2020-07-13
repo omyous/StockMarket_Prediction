@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
-from machine_learning.sentiments_analysis import *
+from src.scrapping.sentiments_analysis import *
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -152,7 +152,7 @@ class LSTM_data():
         self.lag: int = 5
         self.x_scaler = MinMaxScaler()
         self.y_scaler = MinMaxScaler()
-        # self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
+        self.X_train, self.X_test, self.Y_train, self.Y_test = self.get_memory()
 
     def get_XY(self):
         data = self.raw_data
@@ -179,11 +179,9 @@ class LSTM_data():
             dy = dy.merge(dytemps, on='Date')
         X = X.merge(dy, on='Date')
         X = X.dropna()
-<<<<<<< HEAD
-        X.columns = ['High_lag1', 'Low_lag1', 'Open_lag1', 'Volume_lag1', 'Adj Close_lag1',
-=======
+
+
         X.columns = ['High_lag1', 'Low_lag1', 'Open_lag1', 'Volulag1', 'Adj Close_lag1',
->>>>>>> 5b4f57363588bf6aabe74c324ff7f1aa1b6a7832
                      'High_lag2', 'Low_lag2', 'Open_lag2', 'Volume_lag2', 'Adj Close_lag2',
                      'High_lag3', 'Low_lag3', 'Open_lag3', 'Volume_lag3', 'Adj Close_lag3',
                      'High_lag4', 'Low_lag4', 'Open_lag4', 'Volume_lag4', 'Adj Close_lag4',
