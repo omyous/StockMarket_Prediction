@@ -2,8 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow as tf
 from tensorflow_core.python.keras import Sequential
 
-from src.scrapping.attention import *
-from src.scrapping.preprocessing import *
+from src.complete_process.attention import *
+from src.complete_process.preprocessing import *
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from matplotlib import pyplot
 from tensorflow.python.keras import Input, Model
@@ -344,10 +344,10 @@ Rmse : 7.328
     
     
     
-    from src.scrapping.ML_Models import *
+    from src.complete_process.ML_Models import *
 from tensorflow_core.python.keras.layers import Dropout
-from src.scrapping.attention import *
-from src.scrapping.preprocessing import *
+from src.complete_process.attention import *
+from src.complete_process.preprocessing import *
 from tensorflow_core.python.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
 NEURONS: int = 500

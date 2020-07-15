@@ -7,7 +7,7 @@ import pandas as pd
 class Stock_data():
     def __init__(self):
         self.ticker = "GOOGL"
-        #check if the file that contains the last scrapping data exists
+        #check if the file that contains the last complete_process data exists
         self.start_path = Path("data/stock_start_file.txt")
 
         if self.start_path.is_file():
@@ -21,7 +21,7 @@ class Stock_data():
         else:
             self.save_default_date()
 
-        #self.end contain the ending scrapping date
+        #self.end contain the ending complete_process date
         self.end = dt.datetime.today()
 
         #self._raw_data = self.get_data()
@@ -57,7 +57,7 @@ class Stock_data():
 
 
 
-    #after the scrapping, we have to update the start date to get the test data afterwhile
+    #after the complete_process, we have to update the start date to get the test data afterwhile
     def update_start(self):
         self.file = open(self.start_path, "w+")
         self.file.write(str(self.end))

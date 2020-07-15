@@ -6,7 +6,7 @@ import pandas as pd
 class Tweets():
     def __init__(self, company: str = "Google business tech"):
         self.company = company
-        #check if the file that contains the last scrapping data exists
+        #check if the file that contains the last complete_process data exists
         self.start_path = Path("data/tweet_start_file.txt")
 
         if self.start_path.is_file():
@@ -20,7 +20,7 @@ class Tweets():
         else:
             self.save_default_date()
 
-        #self.end contain the ending scrapping date
+        #self.end contain the ending complete_process date
         self.end = dt.datetime.today()
 
         self.tweetCriteria = got.manager.TweetCriteria().setQuerySearch(self.company) \
@@ -57,7 +57,7 @@ class Tweets():
         df.to_csv("data/google_tweets_.csv", index=False)
 
 
-    #after the scrapping, we have to update the start date to get the test data afterwhile
+    #after the complete_process, we have to update the start date to get the test data afterwhile
     def update_start(self):
         self.file = open(self.start_path, "w+")
         self.file.write(str(self.end))
@@ -70,7 +70,7 @@ class Tweets():
 
 
     def update_tweet_hist(self):
-        #get the last scrapping date in order to scrapp the latest tweets sice that day until today
+        #get the last complete_process date in order to scrapp the latest tweets sice that day until today
         start= open(self.start_path, "r+").read()
         start= dt.date(int(start[:4]), int(start[5:7]), int(start[8:10]))
 

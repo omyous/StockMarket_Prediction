@@ -1,8 +1,8 @@
 
 from flask import Flask, request, jsonify, render_template
 from tensorflow.keras import models
-from src.scrapping.models import *
-from src.scrapping.historical_updates import *
+from src.complete_process.models import *
+from src.complete_process.historical_updates import *
 
 app = app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0

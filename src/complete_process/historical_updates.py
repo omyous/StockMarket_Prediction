@@ -1,6 +1,6 @@
-from src.scrapping.tweets_collection import *
-from src.scrapping.preprocessing import *
-from src.scrapping.stock_prices_collection import *
+from src.complete_process.tweets_collection import *
+from src.complete_process.preprocessing import *
+from src.complete_process.stock_prices_collection import *
 
 
 def update_historical_data():

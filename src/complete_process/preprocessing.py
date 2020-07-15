@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
-from src.scrapping.sentiments_analysis import *
+from src.complete_process.sentiments_analysis import *
 import warnings
 warnings.filterwarnings("ignore")
 pd.options.display.max_rows = 999
