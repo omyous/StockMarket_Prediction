@@ -4,7 +4,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from src.scrapping.sentiments_analysis import *
 import warnings
-
 warnings.filterwarnings("ignore")
 pd.options.display.max_rows = 999
 
@@ -102,7 +101,6 @@ class Custom_dataset():
         # create one daily tweet  intead of many ones
         text = [' '.join(sentence) for sentence in self.tweets["text"]]
         self.tweets["text"] = text
-
         self.tweets.to_csv("data/clean_tweets.csv", index=True)
 
     def clean_prices(self):

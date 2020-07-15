@@ -55,7 +55,7 @@ class Sentimend_analysis():
             raw_sentence = self.reduce_lengthening(raw_sentence)
             #raw_sentence = self.specll_check(raw_sentence)
             print(raw_sentence)
-            #foreach sentense we apply wortokenization and call pot tag to get the grammatical nature of the words
+            #foreach sentense we apply wordtokenization and call pot tag to get the grammatical nature of the words
             tagged_sentence = pos_tag(word_tokenize(raw_sentence))
             for word, tag in tagged_sentence:
 

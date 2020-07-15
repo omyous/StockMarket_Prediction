@@ -2,7 +2,7 @@
 from flask import Flask, request, jsonify, render_template
 from tensorflow.keras import models
 from src.scrapping.models import *
-
+from src.scrapping.historical_updates import *
 
 app = app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -19,7 +19,7 @@ def home():
 #get the fiel
 @app.route('/predict',methods=['POST', 'GET'])
 def predict():
-
+    #update_clean_merge()
     preds = .0
     mode= request.form['mode']
     model = request.form['model']
